@@ -15,6 +15,17 @@ class NoteSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class ThinNoteSerializer(ModelSerializer):
+    # author = SerializerMethodField(read_only=True)
+
+    # def get_author(self, obj):
+    #     return str(obj.author.email)
+
+    class Meta:
+        model = Note
+        fields = ('id', 'title')
+
+
 # class NoteSerializer(Serializer):
 #     id = IntegerField(read_only=True)
 #     title = CharField(required=True, max_length=250)
