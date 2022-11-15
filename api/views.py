@@ -3,52 +3,150 @@ from rest_framework.decorators import api_view
 from notes.models import Note
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .serializers import NoteSerializer
-
+from rest_framework.mixins import (
+    ListModelMixin, CreateModelMixin, RetrieveModelMixin,
+    UpdateModelMixin, DestroyModelMixin)
+from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from .serializers import NoteSerializer, ThinNoteSerializer
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 
 # https://developer.mozilla.org/ru/docs/Web/HTTP/Status
 
 
-class NoteListView(APIView):
-    def get(self, request, format=None):
+class NoteViewSet(ModelViewSet):
+    # model = Note
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = (IsAuthenticated, )  # Установка прав
+    # http_method_names = ['get', 'post'] # Доступные методы для этого ViewSet'a
+
+    def list(self, request, *args, **kwargs):
         notes = Note.objects.all()
+        # notes = Note.objects.filter(author=request.user.id)
         context = {'request': request}
-        serializer = NoteSerializer(notes, many=True, context=context)
+        serializer = ThinNoteSerializer(notes, many=True, context=context)
         return Response(serializer.data)
 
-    def post(self, request, format=None):
-        serializer = NoteSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return ThinNoteSerializer
+    #     return NoteSerializer
+    #
+    # def get_queryset(self):
+    #     if self.request.user.admin:
+    #         return self.model.objects.all()
+    #     return self.model.objects.filter(author=self.request.user)
+    #
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
-class NoteDetailView(APIView):
-    def get_object(self, pk):
-        try:
-            return Note.objects.get(pk=pk)
-        except Note.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+# class NoteListView(ListCreateAPIView):
+#     """
+#     Base of ListCreateAPIView:
+#
+#     class ListCreateAPIView(mixins.ListModelMixin,
+#                         mixins.CreateModelMixin,
+#                         GenericAPIView):
+#
+#     def get(self, request, *args, **kwargs):
+#         return self.list(request, *args, **kwargs)
+#
+#     def post(self, request, *args, **kwargs):
+#         return self.create(request, *args, **kwargs)
+#     """
+#     queryset = Note.objects.all()
+#     serializer_class = NoteSerializer
+#
+#     def list(self, request, *args, **kwargs):
+#         """
+#         Redefinition of queryset'a
+#         """
+#         notes = Note.objects.all()
+#         context = {'request': request}
+#         serializer = ThinNoteSerializer(notes, many=True, context=context)
+#         return Response(serializer.data)
+#
+#
+# class NoteDetailView(RetrieveUpdateDestroyAPIView):
+#     """
+#     PATCH при изменении одного или более полей одного объекта.
+#     PUT когда изменяем всё или добавляем новый объект.
+#
+#     Используется для read-write-delete для представления одного экземпляра модели.
+#     Предоставляет обработчики методов get, put, patch и delete.
+#     Расширяет: GenericAPIView, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
+#     """
+#     queryset = Note.objects.all()
+#     serializer_class = NoteSerializer
 
-    def get(self, request, pk, format=None):
-        note = self.get_object(pk)
-        serializer = NoteSerializer(note)
-        return Response(serializer.data)
 
-    def put(self, request, pk, format=None):
-        note = self.get_object(pk)
-        serializer = NoteSerializer(note, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class NoteListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+#     queryset = Note.objects.all()
+#     serializer_class = NoteSerializer
+#
+#     def get(self, request, *args, **kwargs):
+#         self.serializer_class = ThinNoteSerializer
+#         return self.list(request, *args, **kwargs)
+#
+#     def post(self, request, *args, **kwargs):
+#         return self.create(request, *args, **kwargs)
+#
+#
+# class NoteDetailView(RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericAPIView):
+#     queryset = Note.objects.all()
+#     serializer_class = NoteSerializer
+#
+#     def get(self, request, *args, **kwargs):
+#         return self.retrieve(request, *args, **kwargs)
+#
+#     def put(self, request, *args, **kwargs):
+#         return self.update(request, *args, **kwargs)
+#
+#     def delete(self, request, *args, **kwargs):
+#         return self.destroy(request, *args, **kwargs)
 
-    def delete(self, request, pk, format=None):
-        note = self.get_object(pk)
-        note.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+# class NoteListView(APIView):
+#     def get(self, request, format=None):
+#         notes = Note.objects.all()
+#         context = {'request': request}
+#         serializer = ThinNoteSerializer(notes, many=True, context=context)
+#         return Response(serializer.data)
+#
+#     def post(self, request, format=None):
+#         serializer = NoteSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+# class NoteDetailView(APIView):
+#     def get_object(self, pk):
+#         try:
+#             return Note.objects.get(pk=pk)
+#         except Note.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#     def get(self, request, pk, format=None):
+#         note = self.get_object(pk)
+#         serializer = NoteSerializer(note)
+#         return Response(serializer.data)
+#
+#     def put(self, request, pk, format=None):
+#         note = self.get_object(pk)
+#         serializer = NoteSerializer(note, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#     def delete(self, request, pk, format=None):
+#         note = self.get_object(pk)
+#         note.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # @api_view(['GET', 'POST'])

@@ -5,10 +5,17 @@ from django.contrib.auth import get_user_model
 
 
 class NoteSerializer(ModelSerializer):
-    # author = SerializerMethodField(read_only=True)
+    author = SerializerMethodField(read_only=True)
 
-    # def get_author(self, obj):
-    #     return str(obj.author.email)
+    def get_author(self, obj):
+        """
+        Управление возвратом
+        get_имя того поля, которое нам нужно найти
+        Возвращать должно обязательно string
+
+        После этого author будет возвращён не в виде id, а в виде email
+        """
+        return str(obj.author.email)
 
     class Meta:
         model = Note
@@ -16,6 +23,7 @@ class NoteSerializer(ModelSerializer):
 
 
 class ThinNoteSerializer(ModelSerializer):
+    url = HyperlinkedIdentityField(view_name='api:notes-detail')
     # author = SerializerMethodField(read_only=True)
 
     # def get_author(self, obj):
@@ -23,7 +31,7 @@ class ThinNoteSerializer(ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ('id', 'title')
+        fields = ('id', 'title', 'url')
 
 
 # class NoteSerializer(Serializer):
@@ -32,11 +40,11 @@ class ThinNoteSerializer(ModelSerializer):
 #     text = CharField(required=False, allow_blank=True)
 #
 #     def create(self, validated_data):
-#         '''
+#         """
 #         validated_data данные, которые прошли проверку на наличии этих полей
 #         и на соответствие указанным параметрам.
 #         Если происходит валидация, то записываем данные
-#         '''
+#         """
 #         return Note.objects.create(**validated_data)
 #
 #     def update(self, instance, validated_data):
