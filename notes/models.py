@@ -2,9 +2,10 @@ from django.db import models
 from django.conf import settings
 
 User = settings.AUTH_USER_MODEL
+# https://stackoverflow.com/questions/24629705/django-using-get-user-model-vs-settings-auth-user-model
 
 
-class Note(models.Model):                   # blank=True
+class Note(models.Model):
     author = models.ForeignKey(User, null=True, blank=False, on_delete=models.SET_NULL)
     title = models.CharField(max_length=255)
     text = models.TextField(blank=True)

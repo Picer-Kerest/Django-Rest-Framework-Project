@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.decorators import api_view
 from notes.models import Note
@@ -7,18 +8,26 @@ from rest_framework.mixins import (
     ListModelMixin, CreateModelMixin, RetrieveModelMixin,
     UpdateModelMixin, DestroyModelMixin)
 from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .serializers import NoteSerializer, ThinNoteSerializer
+from .serializers import NoteSerializer, ThinNoteSerializer, UserSerializer
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
-
+from rest_framework.permissions import IsAdminUser
+from .permissions import IsAuthorOrReadOnly
 # https://developer.mozilla.org/ru/docs/Web/HTTP/Status
+
+
+class UserViewSet(ModelViewSet):
+    model = get_user_model()
+    queryset = model.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdminUser, )
+    # Новых пользователей может создавать только администратор
 
 
 class NoteViewSet(ModelViewSet):
     # model = Note
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (IsAuthenticated, )  # Установка прав
+    permission_classes = (IsAuthorOrReadOnly, )  # Установка прав
     # http_method_names = ['get', 'post'] # Доступные методы для этого ViewSet'a
 
     def list(self, request, *args, **kwargs):
@@ -39,6 +48,9 @@ class NoteViewSet(ModelViewSet):
     #     return self.model.objects.filter(author=self.request.user)
     #
     def perform_create(self, serializer):
+        """
+        request.user обычно возвращает экземпляр django.contrib.auth.models.User
+        """
         serializer.save(author=self.request.user)
 
 

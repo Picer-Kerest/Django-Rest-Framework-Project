@@ -1,7 +1,7 @@
 from django.urls import path
 from api import views
 # from api.views import NoteListView, NoteDetailView
-from api.views import NoteViewSet
+from api.views import NoteViewSet, UserViewSet
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
 
@@ -9,6 +9,7 @@ app_name = 'api'
 
 router = DefaultRouter()
 router.register('notes', NoteViewSet, basename='notes')  # basename - то, что до - в urlpatterns
+router.register('users', UserViewSet, basename='users')
 urlpatterns = router.urls
 
 # notes_list = NoteViewSet.as_view({

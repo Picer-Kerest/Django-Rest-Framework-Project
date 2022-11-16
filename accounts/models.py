@@ -79,6 +79,13 @@ class User(AbstractBaseUser):
         return self.admin
 
     def save(self, *args, **kwargs):
+        """
+        Если пароль уже захэширован, то ничего не произойдёт
+        Если пароль не зашифрован, тогда произойдёт хэширование
+
+        identify_hasher принимает пароль. Если он хэшированный, то ничего не будет
+        Если пароль обычный, то будет ValueError, что мы и перехватываем
+        """
         try:
             _alg = identify_hasher(self.password)
         except ValueError:
