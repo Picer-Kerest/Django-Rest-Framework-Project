@@ -24,29 +24,42 @@ class UserViewSet(ModelViewSet):
 
 
 class NoteViewSet(ModelViewSet):
-    # model = Note
-    queryset = Note.objects.all()
+    model = Note
+    queryset = model.objects.none()  # Пустой queryset
     serializer_class = NoteSerializer
     permission_classes = (IsAuthorOrReadOnly, )  # Установка прав
     # http_method_names = ['get', 'post'] # Доступные методы для этого ViewSet'a
 
-    def list(self, request, *args, **kwargs):
-        notes = Note.objects.all()
-        # notes = Note.objects.filter(author=request.user.id)
-        context = {'request': request}
-        serializer = ThinNoteSerializer(notes, many=True, context=context)
-        return Response(serializer.data)
+    # def list(self, request, *args, **kwargs):
+    #     notes = Note.objects.all()
+    #     # notes = Note.objects.filter(author=request.user.id)
+    #     context = {'request': request}
+    #     serializer = ThinNoteSerializer(notes, many=True, context=context)
+    #     return Response(serializer.data)
 
-    # def get_serializer_class(self):
-    #     if self.action == 'list':
-    #         return ThinNoteSerializer
-    #     return NoteSerializer
-    #
-    # def get_queryset(self):
-    #     if self.request.user.admin:
-    #         return self.model.objects.all()
-    #     return self.model.objects.filter(author=self.request.user)
-    #
+    def get_serializer_class(self):
+        """
+        Вместо метода list, который занимает много места, определяем этот метод
+        В нашем методе list меняется только сериализатор
+
+        self.action - действие, которое сейчас происходит. Только во ViewSet'ax
+        """
+        if self.action == 'list':
+            return ThinNoteSerializer
+        return NoteSerializer
+
+    def get_queryset(self):
+        """
+        Переопределение queryset'a таким образом,
+        чтобы пользователь видел только созданные им записи.
+        Admin будет видеть все записи
+
+        user имеет поле admin, которое прописано в accounts/models
+        """
+        if self.request.user.admin:
+            return self.model.objects.all()
+        return self.model.objects.filter(author=self.request.user)
+
     def perform_create(self, serializer):
         """
         request.user обычно возвращает экземпляр django.contrib.auth.models.User
